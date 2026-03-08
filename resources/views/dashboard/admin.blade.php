@@ -1,72 +1,81 @@
 @extends('layouts.app')
 
-@section('title', 'Admin Dashboard')
-
 @section('content')
-<div class="row mt-4">
-    <div class="col-md-12">
-        <h2>Admin Dashboard</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">لوحة تحكم الأدمن</h2>
+    <div>
+        <a href="{{ route('events.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus ms-2"></i> فعالية جديدة
+        </a>
     </div>
 </div>
 
-<div class="row mt-4">
+<!-- Stats -->
+<div class="row mb-4">
     <div class="col-md-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <h3>{{ $stats['total_events'] }}</h3>
-                <p>Total Events</p>
-            </div>
+        <div class="card stat-card">
+            <i class="fas fa-calendar"></i>
+            <h3>{{ $stats['total_events'] }}</h3>
+            <p class="text-muted">إجمالي الفعاليات</p>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <h3>{{ $stats['active_events'] }}</h3>
-                <p>Active Events</p>
-            </div>
+        <div class="card stat-card">
+            <i class="fas fa-check-circle text-success"></i>
+            <h3>{{ $stats['active_events'] }}</h3>
+            <p class="text-muted">فعاليات نشطة</p>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <h3>{{ $stats['total_companies'] }}</h3>
-                <p>Companies</p>
-            </div>
+        <div class="card stat-card">
+            <i class="fas fa-building text-primary"></i>
+            <h3>{{ $stats['total_companies'] }}</h3>
+            <p class="text-muted">الشركات</p>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <h3>{{ $stats['total_applicants'] }}</h3>
-                <p>Applicants</p>
-            </div>
+        <div class="card stat-card">
+            <i class="fas fa-users text-info"></i>
+            <h3>{{ $stats['total_applicants'] }}</h3>
+            <p class="text-muted">المتقدمين</p>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-6">
+<div class="row">
+    <!-- Recent Events -->
+    <div class="col-lg-6 mb-4">
         <div class="card">
-            <div class="card-header">
-                <h5>Recent Events</h5>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-calendar ms-2"></i> أحدث الفعاليات</h5>
             </div>
-            <div class="card-body">
-                <table class="table">
+            <div class="card-body p-0">
+                <table class="table table-custom mb-0">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Date</th>
-                            <th>Companies</th>
-                            <th>Status</th>
+                            <th>الاسم</th>
+                            <th>التاريخ</th>
+                            <th>الشركات</th>
+                            <th>الحالة</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($events as $event)
                         <tr>
-                            <td><a href="{{ route('events.show', $event->id) }}">{{ $event->name }}</a></td>
+                            <td>
+                                <a href="{{ route('events.show', $event->id) }}" class="text-decoration-none">
+                                    {{ $event->name }}
+                                </a>
+                            </td>
                             <td>{{ $event->event_date }}</td>
-                            <td>{{ $event->companies->count() }}</td>
-                            <td><span class="badge bg-{{ $event->status === 'active' ? 'success' : 'secondary' }}">{{ $event->status }}</span></td>
+                            <td><span class="badge bg-primary rounded-pill">{{ $event->companies->count() }}</span></td>
+                            <td>
+                                @if($event->status === 'active')
+                                <span class="badge bg-success">نشط</span>
+                                @else
+                                <span class="badge bg-secondary">{{ $event->status }}</span>
+                                @endif
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -75,18 +84,19 @@
         </div>
     </div>
 
-    <div class="col-md-6">
+    <!-- Recent Applicants -->
+    <div class="col-lg-6 mb-4">
         <div class="card">
             <div class="card-header">
-                <h5>Recent Applicants</h5>
+                <h5 class="mb-0"><i class="fas fa-users ms-2"></i> أحدث المتقدمين</h5>
             </div>
-            <div class="card-body">
-                <table class="table">
+            <div class="card-body p-0">
+                <table class="table table-custom mb-0">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Event</th>
+                            <th>الاسم</th>
+                            <th>الإيميل</th>
+                            <th>الفعالية</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -104,13 +114,30 @@
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-12">
-        <a href="{{ route('events.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Create New Event
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <a href="{{ route('events.create') }}" class="text-decoration-none">
+            <div class="card h-100 text-center p-4">
+                <i class="fas fa-plus-circle fa-2x text-primary mb-3"></i>
+                <h5>إضافة فعالية</h5>
+            </div>
         </a>
-        <a href="{{ route('companies.index') }}" class="btn btn-success">
-            <i class="fas fa-building"></i> Manage Companies
+    </div>
+    <div class="col-md-4 mb-4">
+        <a href="{{ route('companies.index') }}" class="text-decoration-none">
+            <div class="card h-100 text-center p-4">
+                <i class="fas fa-building fa-2x text-success mb-3"></i>
+                <h5>إدارة الشركات</h5>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4 mb-4">
+        <a href="{{ route('events.index') }}" class="text-decoration-none">
+            <div class="card h-100 text-center p-4">
+                <i class="fas fa-list fa-2x text-info mb-3"></i>
+                <h5>جميع الفعاليات</h5>
+            </div>
         </a>
     </div>
 </div>
