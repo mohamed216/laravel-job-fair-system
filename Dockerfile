@@ -5,4 +5,4 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . .
 RUN composer install --no-dev --optimize-autoloader --no-interaction
-CMD php artisan migrate --force; php artisan serve --host 0.0.0.0 --port $PORT
+CMD php ...
