@@ -12,4 +12,4 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 RUN chmod -R 775 storage bootstrap/cache
 
-CMD php artisan config:clear && php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=$PORT
+CMD php artisan config:clear && php artisan migrate --force && php artisan db:seed --class=UserSeeder --force && php artisan serve --host=0.0.0.0 --port=$PORT
