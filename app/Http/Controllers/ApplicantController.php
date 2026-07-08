@@ -10,7 +10,9 @@ use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ApplicantController extends Controller
 {
@@ -23,7 +25,10 @@ class ApplicantController extends Controller
     public function store(Request $request, Event $event)
     {
         $validated = $request->validate([
-            'time_slot_id' => 'required|exists:time_slots,id',
+            'time_slot_id' => [
+                'required',
+                Rule::exists('time_slots', 'id')->where('event_id', $event->id),
+            ],
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:applicants,email',
             'phone' => 'required|string',
@@ -32,16 +37,36 @@ class ApplicantController extends Controller
             'skills' => 'nullable|string',
         ]);
 
-        $qrCode = 'JOBFAIR-' . strtoupper(Str::random(10));
-        
-        $validated['event_id'] = $event->id;
-        $validated['qr_code'] = $qrCode;
-        
-        $applicant = Applicant::create($validated);
+        try {
+            $applicant = DB::transaction(function () use ($validated, $event) {
+                // Lock the time slot row to prevent race conditions on capacity.
+                $timeSlot = TimeSlot::where('id', $validated['time_slot_id'])
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-        // Update time slot count
-        $timeSlot = TimeSlot::find($validated['time_slot_id']);
-        $timeSlot->increment('registered_count');
+                if ($timeSlot->registered_count >= $timeSlot->capacity) {
+                    throw new \RuntimeException('This time slot is full. Please choose another one.');
+                }
+
+                // Generate a guaranteed-unique QR code.
+                do {
+                    $qrCode = 'JOBFAIR-' . strtoupper(Str::random(10));
+                } while (Applicant::where('qr_code', $qrCode)->exists());
+
+                $validated['event_id'] = $event->id;
+                $validated['qr_code'] = $qrCode;
+
+                $applicant = Applicant::create($validated);
+                $timeSlot->increment('registered_count');
+
+                return $applicant;
+            });
+        } catch (\RuntimeException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->withInput()->with('error', 'Registration failed. Please try again.');
+        }
 
         return redirect()->route('applicant.qrcode', [$event->id, $applicant->id])
             ->with('success', 'Registration successful!');
@@ -68,8 +93,11 @@ class ApplicantController extends Controller
 
     public function searchByQr(Request $request)
     {
-        $qrCode = $request->get('qr_code');
-        $applicant = Applicant::where('qr_code', $qrCode)->first();
+        $validated = $request->validate([
+            'qr_code' => 'required|string',
+        ]);
+
+        $applicant = Applicant::where('qr_code', $validated['qr_code'])->first();
 
         if (!$applicant) {
             return back()->with('error', 'Applicant not found');
