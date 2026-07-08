@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Support\Str;
+use Illuminate\\Support\\Str;
 
 return [
 
@@ -18,7 +18,7 @@ return [
     |
     */
 
-    'driver' => env('SESSION_DRIVER', 'database'),
+    'driver' => env('SESSION_DRIVER', 'cookie'),
 
     /*
     |--------------------------------------------------------------------------
